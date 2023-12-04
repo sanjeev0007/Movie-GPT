@@ -1,20 +1,24 @@
 import React, { useRef, useState } from "react";
 import Header from "./Header";
 import { ValidateFormData } from "../utils/ValidateFormData";
-import {  createUserWithEmailAndPassword,signInWithEmailAndPassword } from "firebase/auth";
+import {  createUserWithEmailAndPassword,signInWithEmailAndPassword,updateProfile } from "firebase/auth";
 import {auth} from "../utils/Firebase"
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { addUser } from "../utils/userSlice";
+import { USER_AVATAR } from "../utils/Constants";
 
 const Login = () => {
 
-  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const [isSignInForm,setisSignInForm] = useState(true);
   const [errorMsg,seterrorMsg] = useState(null);
   const email = useRef(null);
   const password = useRef(null);
+  const name = useRef(null);
   const handleValidation = (e) =>{
-    // e.preventDefault();
+    
     const msg = ValidateFormData(email.current.value,password.current.value);
     // console.log(msg);
     seterrorMsg(msg);
@@ -26,9 +30,16 @@ const Login = () => {
       .then((userCredential) => {
         // Signed up 
         const user = userCredential.user;
-        console.log(user);
-        navigate('/browse');
+        // console.log(user);
+        updateProfile(user, {
+          displayName: name.current.value,
+          photoURL: USER_AVATAR
+        })
+        .then(()=>{
 
+          const {uid,email,displayName}=auth.currentUser;
+          dispatch(addUser({uid:uid,email:email,displayName:displayName}));  
+        })
         // ...
       })
       .catch((error) => {
@@ -44,7 +55,6 @@ const Login = () => {
         // Signed in 
         const user = userCredential.user;
         console.log(user);
-        navigate('/browse');
         // ...
       })
       .catch((error) => {
@@ -69,7 +79,7 @@ const Login = () => {
       <form onSubmit={(e)=>e.preventDefault()} className="w-3/12 absolute p-12 bg-black m-36 mx-auto rounded-lg right-0 left-0 text-white bg-opacity-80">
         <h1 className=" p-4 font-bold text-3xl  ">{isSignInForm?"Sign In":"Sign Up"}</h1>
 
-        {!isSignInForm && <input className="m-4 p-4 w-full bg-gray-700" type="text" placeholder="Full Name" />}
+        {!isSignInForm && <input ref={name} className="m-4 p-4 w-full bg-gray-700" type="text" placeholder="Full Name" />}
 
 
         <input ref={email} className="m-4 p-4 w-full bg-gray-700" type="text" placeholder="Email Address" />
